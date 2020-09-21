@@ -44,7 +44,7 @@ Params:
 - city: City name
 - date: Checkin date (Price and Disponible Rooms depend on the checkin date)
 
-# Output
+## Output
 
 This command export all hotels information to csv file. 
 
