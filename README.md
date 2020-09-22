@@ -46,10 +46,10 @@ scrapy crawl booking \
 ```
 
 Params:
-- city: city name
-- start_date: start day scrapy
-- end_date: end day scrapy 
-- gap: Gap day between scrapy (if 1, scrapy day by day between start_date and end_date)
+- **city**: city name
+- **start_date**: start day scrapy
+- **end_date**: end day scrapy 
+- **gap**: Gap day between scrapy (if 1, scrapy day by day between start_date and end_date)
   
 Each scrapy day (depend on the start, end and gap), checkin-date will be different for collect prices and disponible rooms for this day.
 
