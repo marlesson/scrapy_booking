@@ -5,8 +5,6 @@
 
 
 # useful for handling different item types with a single interface
-from itemadapter import ItemAdapter
-
 
 class BookingPipeline:
     def open_spider(self, spider):

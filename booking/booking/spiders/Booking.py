@@ -14,7 +14,11 @@ class BookingSpider(scrapy.Spider):
         super(BookingSpider, self).__init__(*args, **kwargs)
         self.city  = kwargs.get('city')
         self.date  = kwargs.get('date') # 09/20/2020
-        self.date  = datetime.datetime.strptime(self.date, '%m/%d/%Y')
+        
+        if self.date is None:
+            self.date = datetime.date.today() + datetime.timedelta(days=1)
+        else: 
+            self.date  = datetime.datetime.strptime(self.date, '%m/%d/%Y')
 
     def start_requests(self):
         yield scrapy.Request(self.site_url, self.parse)
@@ -47,12 +51,12 @@ class BookingSpider(scrapy.Spider):
     def get_hotels(self, response):
 
         for hotel_url in response.css("div#hotellist_inner div.sr_item a.hotel_name_link ::attr(href)"):
-            yield response.follow(hotel_url.extract(), callback=self.parse_hotel)
+            yield response.follow(hotel_url.extract().replace("\n", ""), callback=self.parse_hotel)
 
 
         next_page = response.css("a.paging-next ::attr(href)")
         if next_page:
-            url = next_page[0].extract()
+            url = next_page[0].extract().replace("\n", "")
             yield response.follow(url, callback=self.get_hotels)
 
 
