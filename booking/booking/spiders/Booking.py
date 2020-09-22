@@ -149,8 +149,8 @@ class BookingSpider(scrapy.Spider):
                 prices.append(price)
             except:
                 pass
-            
+
         if len(prices) == 1:
             prices.append(prices[0])
 
-        return [un, mean(prices)]
+        return [un, min(prices)]
