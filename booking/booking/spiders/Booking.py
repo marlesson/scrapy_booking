@@ -2,7 +2,7 @@ import scrapy
 from booking.items import BookingItem
 from scrapy.utils.response import open_in_browser
 from scrapy.shell import inspect_response
-from statistics import mean 
+from statistics import mean
 import datetime
 
 class BookingSpider(scrapy.Spider):
@@ -83,10 +83,10 @@ class BookingSpider(scrapy.Spider):
         star_rating  = len(response.css("span.bui-rating__item")) 
         
         un, rooms_prices = self.get_prices(response.css("div.bui-price-display__value ::text").extract())
+        #rooms_count = len(response.css("a.hprt-roomtype-link"))
+        rooms_count = self.get_rooms(response)
 
-        rooms = response.css("#hprt-table")[0].css("tr") 
-        rooms_count = len(rooms)-1
-        
+
         yield BookingItem(
                 name = hotel_name,
                 hotel_type = hotel_type,
@@ -101,13 +101,25 @@ class BookingSpider(scrapy.Spider):
                 number_of_rooms = rooms_count,
                 uri = uri)
     
+    def get_rooms(self, response):
+        rooms = {}
+        for r in response.css("select.hprt-nos-select"):
+            room_id  = r.attrib['data-room-id'] 
+            room_opt = r.css('option ::text').extract()[-1]
+            room_opt = int(room_opt.replace("\n", "").split("\xa0")[0]  )        
+            rooms[room_id] = room_opt
+        return sum(list(rooms.values()))
+
     def get_prices(self, all_prices):
         un = 'US$'
         prices = []
 
         for p in all_prices:
-            price = p.replace("\n", "").replace("US$", "")
-            price = float(price.replace(",", ""))
-            prices.append(price)
+            price = p.replace("\n", "").replace(un, "")
+            try:
+                price = float(price.replace(",", ""))
+                prices.append(price)
+            except:
+                pass
 
         return [un, mean(prices)]
