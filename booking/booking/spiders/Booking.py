@@ -4,28 +4,50 @@ from scrapy.utils.response import open_in_browser
 from scrapy.shell import inspect_response
 from statistics import mean
 import datetime
-
+from dateutil.parser import parse 
 class BookingSpider(scrapy.Spider):
     name = 'booking'
     allowed_domains = ['booking.com']
     site_url = "https://www.booking.com/index.en-gb.html"
 
+    custom_settings = {
+        'FEED_EXPORT_FIELDS': ["booking_id", "name", "hotel_type", "scrapy_date", "start_date",
+                                "end_date", "checkin_date", "lat", "lng", "price_un", "price", "star_rating", "review_score",
+                                "number_of_reviews", "number_of_rooms", "uri"],
+    }
+
     def __init__(self, *args, **kwargs):
         super(BookingSpider, self).__init__(*args, **kwargs)
         self.city  = kwargs.get('city')
-        self.date  = kwargs.get('date') # 09/20/2020
-        
-        if self.date is None:
-            self.date = datetime.date.today() + datetime.timedelta(days=1)
+        self.start_date  = kwargs.get('start_date') # 2020/09/20
+        self.end_date  = kwargs.get('end_date')
+        self.gap  = int(kwargs.get('gap') or "1")
+
+        if self.start_date is None:
+            self.start_date = datetime.datetime.today() + datetime.timedelta(days=1)
         else: 
-            self.date  = datetime.datetime.strptime(self.date, '%m/%d/%Y')
+            self.start_date  = datetime.datetime.strptime(self.start_date, '%Y/%m/%d')
+
+        if self.end_date is None:
+            self.end_date = self.start_date + datetime.timedelta(days=30)
+        else: 
+            self.end_date  = datetime.datetime.strptime(self.end_date, '%Y/%m/%d')
+
+        if self.end_date < self.start_date:
+            raise Exception("end_data les than start_date")
 
     def start_requests(self):
-        yield scrapy.Request(self.site_url, self.parse)
+        now = self.start_date
+        while now <= self.end_date:
+            print(now)
+            yield scrapy.Request(self.site_url, 
+                                callback=self.parse,
+                                cb_kwargs=dict(checkin=now), dont_filter=True)
+            now = now + datetime.timedelta(days=self.gap)
 
-    def parse(self, response):
-        checkin  = self.date
-        checkout = self.date + datetime.timedelta(days=1)
+    def parse(self, response, checkin):
+        #checkin  = self.date
+        checkout = checkin + datetime.timedelta(days=1)
 
         data = {
             "ss": getattr(self, 'location', self.city),
@@ -65,32 +87,38 @@ class BookingSpider(scrapy.Spider):
         #from IPython import embed; embed()
 
         uri        = response.url
-        expedia_id = response.xpath(
+
+        booking_id = response.xpath(
                         '//div[@id="wrap-hotelpage-top"]/form[@id="top-book"]/input[@name="hotel_id"]/@value'
                     ).extract_first()
+
         hotel_type = response.css("#hp_hotel_name span ::text").extract_first() 
+
         hotel_name = response.css("#hp_hotel_name ::text").extract()[-1].strip()
+
         hotel_lat, hotel_lng = response.css("#hotel_address").attrib['data-atlas-latlng'].split(",")
 
         review_score = response.css("div.bui-review-score.c-score > div.bui-review-score__badge ::text").extract_first() 
+
         review_count = response.css("div.bui-review-score.c-score > div.bui-review-score__content > div.bui-review-score__text ::text").extract_first()
+        review_count = review_count.strip().split(" ")[0] if review_count else "0"
         
-        if review_count:
-            review_count = review_count.strip().split(" ")[0]
-        else:
-            review_count = "0"
+        checkin_date = response.css("#av-summary-checkin ::text").extract_first().replace("\n", "")  
 
         star_rating  = len(response.css("span.bui-rating__item")) 
         
         un, rooms_prices = self.get_prices(response.css("div.bui-price-display__value ::text").extract())
-        #rooms_count = len(response.css("a.hprt-roomtype-link"))
         rooms_count = self.get_rooms(response)
 
-
+        #from IPython import embed; embed()
         yield BookingItem(
+                booking_id = booking_id,
                 name = hotel_name,
+                scrapy_date = datetime.datetime.today().strftime("%Y/%m/%d %H:%M:%S"),
+                checkin_date = parse(checkin_date).strftime("%Y/%m/%d"),
+                start_date = self.start_date.strftime("%Y/%m/%d"),
+                end_date = self.end_date.strftime("%Y/%m/%d"),
                 hotel_type = hotel_type,
-                expedia_id = expedia_id,
                 lat = hotel_lat,
                 lng = hotel_lng,
                 price = rooms_prices,
@@ -121,5 +149,8 @@ class BookingSpider(scrapy.Spider):
                 prices.append(price)
             except:
                 pass
+            
+        if len(prices) == 1:
+            prices.append(prices[0])
 
         return [un, mean(prices)]

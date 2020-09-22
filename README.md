@@ -37,12 +37,16 @@ Run Job:
 
 ```
 cd booking
-scrapy crawl booking -a city="chicago" -a date="09/25/2020" -o 09_25_2020_chicago.csv
+scrapy crawl booking -a city="chicago" -a start_date="2020/09/25" -a end_date="2020/10/25" -a gap=5 -o 2020_09_25_chicago.csv
 ```
 
 Params:
-- city: City name
-- date: Checkin date (Price and Disponible Rooms depend on the checkin date)
+- city: city name
+- start_date: start day scrapy
+- end_date: end day scrapy 
+- gap: Gap day between scrapy (if 1, scrapy day by day between start_date and end_date)
+  
+Each scrapy day (depend on the start, end and gap), checkin-date will be different for collect prices and disponible rooms for this day.
 
 ## Output
 

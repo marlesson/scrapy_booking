@@ -9,9 +9,13 @@ import scrapy
 class BookingItem(scrapy.Item):
     # define the fields for your item here like:
     # name = scrapy.Field()
+    booking_id = scrapy.Field()
     name = scrapy.Field()
+    scrapy_date = scrapy.Field()
+    checkin_date = scrapy.Field()
+    start_date = scrapy.Field()
+    end_date = scrapy.Field()
     hotel_type = scrapy.Field()
-    expedia_id = scrapy.Field()
     lat = scrapy.Field()
     lng = scrapy.Field()
     price_un = scrapy.Field()
