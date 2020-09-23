@@ -13,6 +13,8 @@ class BookingItem(scrapy.Item):
     name = scrapy.Field()
     scrapy_date = scrapy.Field()
     checkin_date = scrapy.Field()
+    checkout_date = scrapy.Field()
+    gap = scrapy.Field()
     start_date = scrapy.Field()
     end_date = scrapy.Field()
     hotel_type = scrapy.Field()

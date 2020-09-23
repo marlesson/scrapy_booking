@@ -12,7 +12,7 @@ class BookingSpider(scrapy.Spider):
 
     custom_settings = {
         'FEED_EXPORT_FIELDS': ["booking_id", "name", "hotel_type", "scrapy_date", "start_date",
-                                "end_date", "checkin_date", "lat", "lng", "price_un", "price", "star_rating", "review_score",
+                                "end_date", "checkin_date", "checkout_date", "gap", "lat", "lng", "price_un", "price", "star_rating", "review_score",
                                 "number_of_reviews", "number_of_rooms", "uri"],
     }
 
@@ -104,6 +104,7 @@ class BookingSpider(scrapy.Spider):
         review_count = review_count.strip().split(" ")[0] if review_count else "0"
         
         checkin_date = response.css("#av-summary-checkin ::text").extract_first().replace("\n", "")  
+        checkout_date = response.css("#av-summary-checkout ::text").extract_first().replace("\n", "")  
 
         star_rating  = len(response.css("span.bui-rating__item")) 
         
@@ -116,8 +117,10 @@ class BookingSpider(scrapy.Spider):
                 name = hotel_name,
                 scrapy_date = datetime.datetime.today().strftime("%Y/%m/%d %H:%M:%S"),
                 checkin_date = parse(checkin_date).strftime("%Y/%m/%d"),
+                checkout_date = parse(checkout_date).strftime("%Y/%m/%d"),
                 start_date = self.start_date.strftime("%Y/%m/%d"),
                 end_date = self.end_date.strftime("%Y/%m/%d"),
+                gap=self.gap,
                 hotel_type = hotel_type,
                 lat = hotel_lat,
                 lng = hotel_lng,
@@ -152,5 +155,5 @@ class BookingSpider(scrapy.Spider):
 
         if len(prices) == 1:
             prices.append(prices[0])
-
+        #from IPython import embed; embed()
         return [un, min(prices)]
